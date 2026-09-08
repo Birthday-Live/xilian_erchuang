@@ -122,6 +122,15 @@
             background: linear-gradient(135deg, rgba(150,100,200,.32), rgba(200,160,240,.22));
             box-shadow: 0 4px 18px rgba(120,70,180,.28);
         }
+        .chip svg {
+            width: 14px; height: 14px;
+            flex: 0 0 auto;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
         .chip i { font-style: normal; font-size: 11px; opacity: .75; }
 
         /* ===== 网格 ===== */
@@ -508,6 +517,21 @@
             .v-bar { height: 52px; }
             .site-count { display: none; }
         }
+
+        /* ===== 免责声明 ===== */
+        .site-footer {
+            max-width: 940px;
+            margin: 46px auto 0;
+            padding: 18px 18px 0;
+            border-top: 1px solid rgba(255,255,255,.05);
+            text-align: center;
+            font-size: 12px;
+            line-height: 2;
+            letter-spacing: .3px;
+            color: #5d4d70;
+            user-select: none;
+        }
+        .site-footer a { color: #8a6cb0; text-decoration: none; }
     </style>
 </head>
 <body>
@@ -521,9 +545,18 @@
 
     <!-- ===== 分类工具条 ===== -->
     <div class="toolbar" id="toolbar" hidden>
-        <button class="chip on" data-filter="all">全部 <i id="cAll"></i></button>
-        <button class="chip" data-filter="image">🖼 图片 <i id="cImg"></i></button>
-        <button class="chip" data-filter="video">🎬 视频 <i id="cVid"></i></button>
+        <button class="chip on" data-filter="all">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.2" y="3.2" width="7.6" height="7.6" rx="1.6"/><rect x="13.2" y="3.2" width="7.6" height="7.6" rx="1.6"/><rect x="3.2" y="13.2" width="7.6" height="7.6" rx="1.6"/><rect x="13.2" y="13.2" width="7.6" height="7.6" rx="1.6"/></svg>
+            全部 <i id="cAll"></i>
+        </button>
+        <button class="chip" data-filter="image">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.6" cy="9.4" r="1.7"/><path d="M21 15.6l-5-5-5.2 5.2-3.4-3.4L3 16.4"/></svg>
+            图片 <i id="cImg"></i>
+        </button>
+        <button class="chip" data-filter="video">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.6" y="5.6" width="13" height="12.8" rx="2.6"/><path d="M15.6 10.4l5.8-3.2v9.6l-5.8-3.2z"/></svg>
+            视频 <i id="cVid"></i>
+        </button>
     </div>
 
     <!-- ===== 内容 ===== -->
@@ -534,6 +567,11 @@
             <div class="hint">正在读取 er.json</div>
         </div>
     </main>
+
+    <!-- ===== 免责声明 ===== -->
+    <footer class="site-footer">
+        本网页的所有视频和图片内容均由互联网提供，因部分原因，无法寻找到各个作品的对应作者，但由于org.cn的性质，此网站没有任何收费内容以及能让站长盈利的各种内容。
+    </footer>
 
     <!-- ===== 详情查看器 ===== -->
     <div class="viewer" id="viewer" role="dialog" aria-modal="true">
@@ -551,7 +589,7 @@
 
         <div class="v-stage" id="vStage"></div>
 
-        <div class="v-hint">← → 切换 · Esc 关闭 · 看视频点右下角“全屏”可横屏放大</div>
+        <div class="v-hint">方向键 切换 · Esc 关闭 · 看视频点右下角“全屏”可横屏放大</div>
 
         <div class="v-bar">
             <div class="v-type" id="vType">视频</div>
@@ -848,7 +886,7 @@
                                     '<span>点击播放视频</span>' +
                                 '</div>' +
                                 '<span class="play-badge"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span>' +
-                                '<span class="corner-hint">▶ 点击全屏播放</span>' +
+                                '<span class="corner-hint"><svg viewBox="0 0 24 24"><path d="M8.4 5.8v12.4L18.8 12z"/></svg>点击播放</span>' +
                             '</div>' + title +
                         '</div>';
                 } else {
@@ -856,7 +894,7 @@
                         '<div class="media-card image-card" data-index="' + idx + '" role="button" tabindex="0" aria-label="查看大图">' +
                             '<img class="photo" src="' + safeUrl + '" alt="昔涟 · 二创" loading="lazy" draggable="false" ' +
                                 'onerror="this.classList.add(\'img-broken\')" />' +
-                            '<span class="corner-hint">🔍 查看大图</span>' + title +
+                            '<span class="corner-hint"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>查看大图</span>' + title +
                         '</div>';
                 }
             });
@@ -1007,7 +1045,7 @@
             closeViewer();
         });
 
-        // 键盘：卡片回车/空格打开 + 查看器内 ← → Esc / F
+        // 键盘：卡片回车/空格打开 + 查看器内 方向键 / Esc / F
         document.addEventListener('keydown', function (e) {
             var card = e.target && e.target.closest ? e.target.closest('.media-card') : null;
             if (card && (e.key === 'Enter' || e.key === ' ')) {
@@ -1040,7 +1078,7 @@
             }
         }, { passive: true });
 
-        // 点卡片 → 打开详情
+        // 点卡片打开详情
         APP.addEventListener('click', function (e) {
             var card = e.target.closest ? e.target.closest('.media-card') : null;
             if (!card) return;
