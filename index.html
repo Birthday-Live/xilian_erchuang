@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>昔涟 · 二创集</title>
+    <style>
+        /* ===== 全局重置 & 基础 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0d0b12;
+            background-image: radial-gradient(ellipse at 20% 50%, #1a1326 0%, #0d0b12 70%);
+            min-height: 100vh;
+            font-family: 'PingFang SC', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+            padding: 30px 20px 60px;
+            color: #f0ecf5;
+        }
+
+        /* ===== 顶部标题 ===== */
+        .site-header {
+            text-align: center;
+            padding: 10px 0 40px;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        .site-header h1 {
+            font-size: 42px;
+            font-weight: 300;
+            letter-spacing: 12px;
+            background: linear-gradient(135deg, #f0e6ff 0%, #c8b0e8 40%, #a885d4 70%, #c8b0e8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: none;
+            position: relative;
+            display: inline-block;
+        }
+
+        .site-header h1::after {
+            content: '· 二创集';
+            font-size: 16px;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, #b8a0d8, #8a70b0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: absolute;
+            right: -90px;
+            bottom: 6px;
+            font-weight: 300;
+            opacity: 0.7;
+        }
+
+        /* ===== 加载状态 ===== */
+        .loading {
+            text-align: center;
+            padding: 80px 20px;
+            font-size: 16px;
+            color: #7a6a8e;
+            letter-spacing: 2px;
+        }
+
+        .loading .spinner {
+            display: inline-block;
+            width: 36px;
+            height: 36px;
+            border: 2px solid #2a1f3a;
+            border-top-color: #b8a0d8;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading .hint {
+            font-size: 13px;
+            color: #4a3a5a;
+            margin-top: 8px;
+        }
+
+        /* ===== 空状态 ===== */
+        .empty-state {
+            text-align: center;
+            padding: 100px 20px;
+            color: #5a4a6e;
+        }
+
+        .empty-state .icon {
+            display: inline-block;
+            margin-bottom: 16px;
+            opacity: 0.5;
+            color: #7a6a8e;
+        }
+
+        .empty-state p {
+            font-size: 15px;
+            letter-spacing: 1px;
+        }
+
+        /* ===== 媒体网格 ===== */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* ===== 媒体卡片 ===== */
+        .media-card {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #16121e;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            transition: transform 0.25s ease, box-shadow 0.3s ease;
+            aspect-ratio: auto;
+            cursor: default;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .media-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 48px rgba(80, 40, 120, 0.25);
+            border-color: rgba(180, 140, 220, 0.15);
+        }
+
+        .media-card img,
+        .media-card video {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 520px;
+            object-fit: contain;
+            background: #0f0c16;
+            transition: opacity 0.4s ease;
+        }
+
+        .media-card video {
+            background: #0a0810;
+            cursor: pointer;
+        }
+
+        /* 图片上的悬浮提示（仅图片） */
+        .media-card .img-hint {
+            position: absolute;
+            bottom: 12px;
+            right: 14px;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(6px);
+            padding: 4px 12px 4px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #c8b8e0;
+            letter-spacing: 0.5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .media-card:hover .img-hint {
+            opacity: 1;
+        }
+
+        .media-card .img-hint svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        /* 视频控制美化 */
+        .media-card video::-webkit-media-controls-panel {
+            background: rgba(10, 8, 16, 0.8);
+            backdrop-filter: blur(8px);
+        }
+
+        .media-card video::-webkit-media-controls-current-time-display,
+        .media-card video::-webkit-media-controls-time-remaining-display {
+            color: #d0c8e8;
+        }
+
+        /* ===== 灯箱 (Lightbox) ===== */
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(8, 6, 14, 0.92);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.35s ease, visibility 0.35s ease;
+            padding: 30px;
+            cursor: zoom-out;
+        }
+
+        .lightbox.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .lightbox img {
+            max-width: 95vw;
+            max-height: 92vh;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+            transform: scale(0.95);
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: zoom-out;
+            background: #0a0810;
+        }
+
+        .lightbox.active img {
+            transform: scale(1);
+        }
+
+        .lightbox .close-btn {
+            position: fixed;
+            top: 24px;
+            right: 28px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+            backdrop-filter: blur(8px);
+            user-select: none;
+            color: #c0b0d8;
+        }
+
+        .lightbox .close-btn:hover {
+            background: rgba(120, 80, 180, 0.3);
+            transform: scale(1.08);
+        }
+
+        .lightbox .close-btn svg {
+            width: 28px;
+            height: 28px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .lightbox .counter {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #8a7a9e;
+            font-size: 14px;
+            letter-spacing: 2px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 6px 20px;
+            border-radius: 30px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-weight: 300;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 640px) {
+            body {
+                padding: 16px 12px 40px;
+            }
+
+            .site-header h1 {
+                font-size: 28px;
+                letter-spacing: 8px;
+            }
+            .site-header h1::after {
+                font-size: 12px;
+                right: -64px;
+                bottom: 4px;
+            }
+
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 12px;
+            }
+
+            .media-card img,
+            .media-card video {
+                max-height: 340px;
+            }
+
+            .lightbox {
+                padding: 16px;
+            }
+            .lightbox .close-btn {
+                width: 40px;
+                height: 40px;
+                top: 16px;
+                right: 16px;
+            }
+            .lightbox .close-btn svg {
+                width: 22px;
+                height: 22px;
+            }
+            .lightbox .counter {
+                font-size: 12px;
+                padding: 4px 14px;
+                bottom: 20px;
+            }
+
+            .media-card .img-hint {
+                display: none;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                gap: 8px;
+            }
+            .media-card img,
+            .media-card video {
+                max-height: 240px;
+            }
+            .site-header h1 {
+                font-size: 22px;
+                letter-spacing: 6px;
+            }
+            .site-header h1::after {
+                display: none;
+            }
+            .site-header {
+                padding-bottom: 24px;
+            }
+        }
+
+        /* ===== 错误提示 ===== */
+        .error-msg {
+            text-align: center;
+            padding: 60px 20px;
+            color: #b080a0;
+        }
+
+        .error-msg .icon {
+            display: inline-block;
+            margin-bottom: 12px;
+            color: #b080a0;
+        }
+
+        .error-msg .icon svg {
+            width: 36px;
+            height: 36px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .error-msg .code {
+            font-size: 14px;
+            color: #6a4a6a;
+            margin-top: 8px;
+            word-break: break-all;
+        }
+
+        /* ===== 滚动条美化 ===== */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d0b12;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3a2a4e;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5a4a6e;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== 顶部 ===== -->
+    <header class="site-header">
+        <h1>昔涟</h1>
+    </header>
+
+    <!-- ===== 内容容器 ===== -->
+    <div id="app">
+        <!-- 由 JS 动态渲染 -->
+        <div class="loading" id="loadingState">
+            <div class="spinner"></div>
+            <div>加载中 · 请稍候</div>
+            <div class="hint">读取 er.json</div>
+        </div>
+    </div>
+
+    <!-- ===== 灯箱 ===== -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <div class="close-btn" onclick="closeLightbox()">
+            <svg viewBox="0 0 24 24">
+                <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+        </div>
+        <img id="lightboxImg" src="" alt="放大预览" />
+        <div class="counter" id="lightboxCounter"></div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  核心逻辑
+        // ============================================================
+
+        (function() {
+            'use strict';
+
+            const APP = document.getElementById('app');
+            const LOADING = document.getElementById('loadingState');
+            const LIGHTBOX = document.getElementById('lightbox');
+            const LIGHTBOX_IMG = document.getElementById('lightboxImg');
+            const LIGHTBOX_COUNTER = document.getElementById('lightboxCounter');
+
+            // ---------- 工具 ----------
+            function isImage(url) {
+                const ext = url.split('?')[0].split('#')[0].split('.').pop()?.toLowerCase() || '';
+                return ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg', 'avif', 'tiff', 'tif'].includes(ext);
+            }
+
+            function isVideo(url) {
+                const ext = url.split('?')[0].split('#')[0].split('.').pop()?.toLowerCase() || '';
+                return ['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', 'wmv', 'm4v', 'mpg', 'mpeg', '3gp'].includes(ext);
+            }
+
+            function getType(url) {
+                if (isVideo(url)) return 'video';
+                if (isImage(url)) return 'image';
+                return 'image'; // 默认当作图片
+            }
+
+            // ---------- 渲染 ----------
+            function renderItems(items) {
+                LOADING.style.display = 'none';
+
+                if (!items || items.length === 0) {
+                    APP.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">
+                                <svg viewBox="0 0 24 24" width="56" height="56">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
+                                    <path d="M21 15l-5-5-5 5-5-5-3 3" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <p>还没有内容 · 去 er.json 添加链接吧</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const imageItems = [];
+                items.forEach((item, idx) => {
+                    if (item.type === 'image') {
+                        imageItems.push({ url: item.url, index: idx });
+                    }
+                });
+
+                let html = '<div class="grid">';
+
+                items.forEach((item, idx) => {
+                    const url = item.url;
+                    const type = item.type || getType(url);
+                    const isImg = type === 'image';
+                    const isVid = type === 'video';
+                    const safeUrl = url.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
+                    if (isImg) {
+                        html += `
+                            <div class="media-card" data-index="${idx}" data-url="${safeUrl}">
+                                <img src="${safeUrl}" alt="昔涟 · 二创" loading="lazy" onerror="this.style.opacity='0.3'" />
+                                <span class="img-hint">
+                                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+                                    点击放大
+                                </span>
+                            </div>
+                        `;
+                    } else if (isVid) {
+                        html += `
+                            <div class="media-card" data-index="${idx}">
+                                <video src="${safeUrl}" controls preload="metadata" playsinline
+                                       onerror="this.style.opacity='0.3'">
+                                    您的浏览器不支持视频播放
+                                </video>
+                            </div>
+                        `;
+                    } else {
+                        // 未知类型 —— 尝试当作图片
+                        html += `
+                            <div class="media-card" data-index="${idx}" data-url="${safeUrl}">
+                                <img src="${safeUrl}" alt="昔涟 · 二创" loading="lazy" onerror="this.style.opacity='0.3'" />
+                                <span class="img-hint">
+                                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+                                    点击放大
+                                </span>
+                            </div>
+                        `;
+                    }
+                });
+
+                html += '</div>';
+                APP.innerHTML = html;
+
+                // ---------- 绑定图片点击事件（灯箱） ----------
+                const cards = APP.querySelectorAll('.media-card');
+                cards.forEach((card) => {
+                    const img = card.querySelector('img');
+                    if (img) {
+                        card.style.cursor = 'pointer';
+                        card.addEventListener('click', function(e) {
+                            if (e.target.tagName === 'VIDEO') return;
+                            const url = this.dataset.url || img.src;
+                            if (url) {
+                                openLightbox(url, imageItems);
+                            }
+                        });
+                    }
+                });
+            }
+
+            // ---------- 灯箱 ----------
+            let lightboxItems = [];
+            let currentLightboxIndex = 0;
+
+            function openLightbox(url, items) {
+                lightboxItems = items || [];
+                let foundIndex = -1;
+                lightboxItems.forEach((item, i) => {
+                    if (item.url === url) foundIndex = i;
+                });
+                if (foundIndex === -1 && lightboxItems.length > 0) {
+                    foundIndex = 0;
+                }
+                currentLightboxIndex = foundIndex >= 0 ? foundIndex : 0;
+
+                showLightboxImage(currentLightboxIndex);
+                LIGHTBOX.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function showLightboxImage(index) {
+                if (!lightboxItems.length) return;
+                const item = lightboxItems[index];
+                if (!item) return;
+                LIGHTBOX_IMG.src = item.url;
+                LIGHTBOX_COUNTER.textContent = `${index + 1} / ${lightboxItems.length}`;
+                document.removeEventListener('keydown', lightboxKeyHandler);
+                document.addEventListener('keydown', lightboxKeyHandler);
+            }
+
+            function lightboxKeyHandler(e) {
+                if (e.key === 'Escape') {
+                    closeLightbox();
+                } else if (e.key === 'ArrowLeft') {
+                    navigateLightbox(-1);
+                } else if (e.key === 'ArrowRight') {
+                    navigateLightbox(1);
+                }
+            }
+
+            function navigateLightbox(delta) {
+                if (!lightboxItems.length) return;
+                let newIndex = currentLightboxIndex + delta;
+                if (newIndex < 0) newIndex = lightboxItems.length - 1;
+                if (newIndex >= lightboxItems.length) newIndex = 0;
+                currentLightboxIndex = newIndex;
+                showLightboxImage(currentLightboxIndex);
+            }
+
+            window.closeLightbox = function() {
+                LIGHTBOX.classList.remove('active');
+                document.body.style.overflow = '';
+                document.removeEventListener('keydown', lightboxKeyHandler);
+            };
+
+            LIGHTBOX_IMG.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+
+            let touchStartY = 0;
+            LIGHTBOX.addEventListener('touchstart', function(e) {
+                touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+            LIGHTBOX.addEventListener('touchend', function(e) {
+                const endY = e.changedTouches[0].clientY;
+                if (endY - touchStartY > 60) {
+                    closeLightbox();
+                }
+            }, { passive: true });
+
+            // ---------- 加载数据 ----------
+            function loadData() {
+                const url = 'er.json';
+                fetch(url, {
+                        cache: 'no-cache',
+                        headers: { 'Accept': 'application/json' }
+                    })
+                    .then(res => {
+                        if (!res.ok) {
+                            throw new Error(`HTTP ${res.status} · ${res.statusText}`);
+                        }
+                        return res.json();
+                    })
+                    .then(data => {
+                        let items = [];
+                        if (Array.isArray(data)) {
+                            items = data.map(item => {
+                                if (typeof item === 'string') {
+                                    return { url: item, type: getType(item) };
+                                }
+                                if (typeof item === 'object' && item.url) {
+                                    return {
+                                        url: item.url,
+                                        type: item.type || getType(item.url)
+                                    };
+                                }
+                                return null;
+                            }).filter(Boolean);
+                        } else if (typeof data === 'object' && data !== null) {
+                            const raw = data.items || data.list || data.data || data;
+                            if (Array.isArray(raw)) {
+                                items = raw.map(item => {
+                                    if (typeof item === 'string') {
+                                        return { url: item, type: getType(item) };
+                                    }
+                                    if (typeof item === 'object' && item.url) {
+                                        return {
+                                            url: item.url,
+                                            type: item.type || getType(item.url)
+                                        };
+                                    }
+                                    return null;
+                                }).filter(Boolean);
+                            } else {
+                                const vals = Object.values(raw).filter(v => typeof v === 'string' && v.startsWith('http'));
+                                items = vals.map(url => ({ url, type: getType(url) }));
+                            }
+                        }
+
+                        renderItems(items);
+                    })
+                    .catch(err => {
+                        LOADING.style.display = 'none';
+                        APP.innerHTML = `
+                            <div class="error-msg">
+                                <div class="icon">
+                                    <svg viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M12 8v4M12 16h.01"/>
+                                    </svg>
+                                </div>
+                                <div>加载 er.json 失败</div>
+                                <div class="code">${err.message || '请检查文件是否存在或网络连接'}</div>
+                                <div style="margin-top:16px; font-size:13px; color:#4a3a5a;">
+                                    确保 er.json 与 index.html 在同一目录下
+                                </div>
+                            </div>
+                        `;
+                        console.error('[昔涟] 加载失败:', err);
+                    });
+            }
+
+            // ---------- 启动 ----------
+            loadData();
+
+        })();
+    </script>
+
+</body>
+</html>
