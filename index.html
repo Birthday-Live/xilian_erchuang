@@ -5,398 +5,508 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>昔涟 · 二创集</title>
     <style>
-        /* ===== 全局重置 & 基础 ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* ==========================================================
+           昔涟 · 二创集  v2
+           —— 图片 + 视频二创展示页（PC / 平板 / 手机通用）
+           er.json 支持的条目格式：
+             ["https://xxx/1.png", "https://xxx/a.mp4"]            // 纯链接
+             { "url":"...", "type":"image|video",                 // 推荐写法
+               "title":"标题", "poster":"封面(可选, 留空自动截取首帧)" }
+             { "items": [ ...同上... ] }                           // 或包一层
+        ========================================================== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        [hidden] { display: none !important; }
+
+        html { -webkit-text-size-adjust: 100%; }
 
         body {
             background: #0d0b12;
-            background-image: radial-gradient(ellipse at 20% 50%, #1a1326 0%, #0d0b12 70%);
+            background-image: radial-gradient(ellipse at 18% 40%, #1c1428 0%, #0d0b12 72%);
+            background-attachment: fixed;
             min-height: 100vh;
-            font-family: 'PingFang SC', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
-            padding: 30px 20px 60px;
+            font-family: 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
             color: #f0ecf5;
+            padding: 26px 16px 70px;
         }
+        body.no-scroll { overflow: hidden; }
 
-        /* ===== 顶部标题 ===== */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0d0b12; }
+        ::-webkit-scrollbar-thumb { background: #3a2a4e; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #5a4a6e; }
+
+        /* ===== 顶部 ===== */
         .site-header {
             text-align: center;
-            padding: 10px 0 40px;
+            padding: 6px 0 6px;
             user-select: none;
             pointer-events: none;
         }
-
         .site-header h1 {
-            font-size: 42px;
-            font-weight: 300;
-            letter-spacing: 12px;
-            background: linear-gradient(135deg, #f0e6ff 0%, #c8b0e8 40%, #a885d4 70%, #c8b0e8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: none;
-            position: relative;
             display: inline-block;
+            position: relative;
+            font-size: 40px;
+            font-weight: 300;
+            letter-spacing: 14px;
+            padding-right: 14px;
+            background: linear-gradient(135deg, #f0e6ff 0%, #c8b0e8 40%, #a885d4 70%, #e0d0f4 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-
         .site-header h1::after {
-            content: '· 二创集';
-            font-size: 16px;
-            letter-spacing: 4px;
+            content: '二创集';
+            position: absolute;
+            right: -58px; bottom: 8px;
+            font-size: 13px;
+            letter-spacing: 3px;
+            font-weight: 400;
             background: linear-gradient(135deg, #b8a0d8, #8a70b0);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
-            position: absolute;
-            right: -90px;
-            bottom: 6px;
-            font-weight: 300;
-            opacity: 0.7;
+            opacity: .75;
         }
-
-        /* ===== 加载状态 ===== */
-        .loading {
-            text-align: center;
-            padding: 80px 20px;
-            font-size: 16px;
-            color: #7a6a8e;
-            letter-spacing: 2px;
-        }
-
-        .loading .spinner {
-            display: inline-block;
-            width: 36px;
-            height: 36px;
-            border: 2px solid #2a1f3a;
-            border-top-color: #b8a0d8;
-            border-radius: 50%;
-            animation: spin 0.9s linear infinite;
-            margin-bottom: 20px;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .loading .hint {
+        .site-sub {
+            margin-top: 10px;
             font-size: 13px;
-            color: #4a3a5a;
-            margin-top: 8px;
+            letter-spacing: 4px;
+            color: #5f4f75;
+            font-weight: 300;
         }
-
-        /* ===== 空状态 ===== */
-        .empty-state {
-            text-align: center;
-            padding: 100px 20px;
-            color: #5a4a6e;
-        }
-
-        .empty-state .icon {
-            display: inline-block;
-            margin-bottom: 16px;
-            opacity: 0.5;
-            color: #7a6a8e;
-        }
-
-        .empty-state p {
-            font-size: 15px;
+        .site-count {
+            margin-top: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
             letter-spacing: 1px;
+            color: #8a7a9e;
+            background: rgba(255,255,255,.03);
+            border: 1px solid rgba(255,255,255,.06);
+            border-radius: 30px;
+            padding: 5px 16px;
+            pointer-events: none;
         }
+        .site-count b { color: #c8b0e8; font-weight: 600; }
 
-        /* ===== 媒体网格 ===== */
+        /* ===== 工具条（分类筛选） ===== */
+        .toolbar {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 26px 0 24px;
+        }
+        .chip {
+            appearance: none;
+            border: 1px solid rgba(255,255,255,.08);
+            background: rgba(255,255,255,.03);
+            color: #8a7a9e;
+            font-size: 13px;
+            letter-spacing: 1px;
+            padding: 7px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all .25s ease;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .chip:hover { color: #d8cce8; border-color: rgba(200,176,232,.4); background: rgba(200,176,232,.07); }
+        .chip.on {
+            color: #efe6fb;
+            border-color: rgba(200,176,232,.65);
+            background: linear-gradient(135deg, rgba(150,100,200,.32), rgba(200,160,240,.22));
+            box-shadow: 0 4px 18px rgba(120,70,180,.28);
+        }
+        .chip i { font-style: normal; font-size: 11px; opacity: .75; }
+
+        /* ===== 网格 ===== */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-            max-width: 1400px;
+            grid-auto-flow: row dense;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            max-width: 1560px;
             margin: 0 auto;
+        }
+
+        @media (min-width: 480px) {
+            .grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+        }
+        @media (min-width: 720px) {
+            .grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+        }
+        @media (min-width: 1000px) {
+            .grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; }
+        }
+        @media (min-width: 1400px) {
+            .grid { grid-template-columns: repeat(auto-fill, minmax(265px, 1fr)); gap: 22px; }
         }
 
         /* ===== 媒体卡片 ===== */
         .media-card {
             position: relative;
-            border-radius: 16px;
-            overflow: hidden;
             background: #16121e;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-            transition: transform 0.25s ease, box-shadow 0.3s ease;
-            aspect-ratio: auto;
-            cursor: default;
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,.05);
+            box-shadow: 0 8px 26px rgba(0,0,0,.5);
+            cursor: zoom-in;
+            line-height: 0;
+            transition: transform .22s ease, box-shadow .3s ease, border-color .25s ease;
+            animation: cardIn .4s ease both;
         }
-
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(10px) scale(.98); }
+            to   { opacity: 1; transform: none; }
+        }
         .media-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 16px 48px rgba(80, 40, 120, 0.25);
-            border-color: rgba(180, 140, 220, 0.15);
+            transform: translateY(-3px);
+            border-color: rgba(200,176,232,.35);
+            box-shadow: 0 14px 40px rgba(60,25,100,.35);
         }
+        .media-card.video-card { cursor: pointer; }
 
-        .media-card img,
-        .media-card video {
+        /* 横屏（宽幅）内容整行展示：手机/平板/电脑都完整变大显示 */
+        .media-card.span-row { grid-column: 1 / -1; }
+
+        .media-card img {
             display: block;
-            width: 100%;
+            max-width: 100%;
+            width: auto;
             height: auto;
-            max-height: 520px;
-            object-fit: contain;
-            background: #0f0c16;
-            transition: opacity 0.4s ease;
+            max-height: 70vh;
+            margin: 0 auto;
+            background: #0c0911;
+        }
+        .media-card.span-row img { max-height: min(70vh, 760px); }
+
+        /* 竖屏长图在窄卡里限高，避免卡片过高 */
+        @media (min-width: 1000px) {
+            .media-card:not(.span-row) img { max-height: 62vh; }
         }
 
-        .media-card video {
-            background: #0a0810;
-            cursor: pointer;
-        }
-
-        /* 图片上的悬浮提示（仅图片） */
-        .media-card .img-hint {
-            position: absolute;
-            bottom: 12px;
-            right: 14px;
-            background: rgba(0, 0, 0, 0.55);
-            backdrop-filter: blur(6px);
-            padding: 4px 12px 4px 8px;
-            border-radius: 20px;
+        /* 标题脚注（可选） */
+        .card-caption {
+            line-height: 1.5;
             font-size: 12px;
+            color: #9d8db4;
+            padding: 9px 12px 10px;
+            background: linear-gradient(180deg, rgba(22,18,30,.4), rgba(22,18,30,.9));
+            border-top: 1px solid rgba(255,255,255,.04);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            user-select: none;
+        }
+        .media-card:hover .card-caption { color: #d5c8e8; }
+
+        /* 图 / 视频上的悬浮角标 */
+        .corner-hint {
+            position: absolute;
+            right: 8px; bottom: 8px;
+            background: rgba(8,5,14,.6);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,.07);
             color: #c8b8e0;
-            letter-spacing: 0.5px;
+            font-size: 11px;
+            letter-spacing: .5px;
+            padding: 3px 9px;
+            border-radius: 16px;
+            display: flex; align-items: center; gap: 4px;
+            line-height: 1.4;
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: opacity .25s ease;
             pointer-events: none;
-            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .media-card:hover .corner-hint { opacity: 1; }
+        .corner-hint svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+        /* ===== 视频封面插槽 ===== */
+        .poster-slot {
+            position: relative;
+            min-height: 170px;
+            background:
+                repeating-linear-gradient(45deg, rgba(255,255,255,.015) 0 12px, transparent 12px 24px),
+                #0f0c16;
             display: flex;
             align-items: center;
-            gap: 4px;
+            justify-content: center;
         }
+        .poster-slot:not(.pending) { min-height: 0; }
 
-        .media-card:hover .img-hint {
-            opacity: 1;
+        .poster-slot .poster-img {
+            opacity: 0;
+            transition: opacity .5s ease;
+            max-width: 100%;
+            height: auto;
+            width: auto;
+            max-height: 70vh;
+            margin: 0 auto;
         }
+        .media-card.span-row .poster-slot .poster-img { max-height: min(70vh, 760px); }
+        .poster-slot.posted .poster-img { opacity: 1; }
+        .poster-slot.posted { background: #0c0911; }
 
-        .media-card .img-hint svg {
-            width: 14px;
-            height: 14px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 2;
+        .spinner {
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            border: 2px solid #2a1f3a;
+            border-top-color: #b8a0d8;
+            animation: spin .8s linear infinite;
         }
-
-        /* 视频控制美化 */
-        .media-card video::-webkit-media-controls-panel {
-            background: rgba(10, 8, 16, 0.8);
-            backdrop-filter: blur(8px);
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .poster-slot .poster-loading {
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            color: #6a5a80; font-size: 11px; letter-spacing: 2px; line-height: 1.4;
         }
+        .poster-slot .poster-loading span { font-size: 11px; letter-spacing: 1px; }
 
-        .media-card video::-webkit-media-controls-current-time-display,
-        .media-card video::-webkit-media-controls-time-remaining-display {
-            color: #d0c8e8;
+        .poster-fallback {
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            color: #7a6a8e; padding: 26px; line-height: 1.4;
         }
+        .poster-fallback svg { width: 38px; height: 38px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; opacity: .8; }
+        .poster-fallback span { font-size: 12px; letter-spacing: 2px; }
+        .poster-fallback[hidden] { display: none; }
 
-        /* ===== 灯箱 (Lightbox) ===== */
-        .lightbox {
+        /* 视频播放小角标 */
+        .play-badge {
+            position: absolute;
+            left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background: rgba(10,6,18,.55);
+            border: 1.5px solid rgba(255,255,255,.25);
+            backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            transition: transform .2s ease, background .2s ease;
+            pointer-events: none;
+        }
+        .play-badge svg { width: 22px; height: 22px; fill: #e8dcf4; margin-left: 2px; }
+        .media-card:hover .play-badge { transform: translate(-50%, -50%) scale(1.12); background: rgba(150,90,220,.55); }
+
+        /* ===== 状态 ===== */
+        .loading, .empty-state, .error-msg { text-align: center; padding: 80px 16px; }
+        .loading { color: #7a6a8e; letter-spacing: 2px; font-size: 15px; }
+        .loading .hint { font-size: 12px; color: #4a3a5a; margin-top: 8px; letter-spacing: 1px; }
+        .empty-state { color: #5a4a6e; }
+        .empty-state svg { width: 56px; height: 56px; stroke: #7a6a8e; fill: none; stroke-width: 1.5; stroke-linecap: round; margin-bottom: 14px; }
+        .empty-state p { font-size: 14px; letter-spacing: 2px; }
+        .error-msg { color: #b080a0; }
+        .error-msg .code { font-size: 12px; color: #6a4a6a; margin: 8px 0 14px; word-break: break-all; }
+        .btn-reload {
+            border: 1px solid rgba(200,176,232,.35);
+            background: rgba(200,176,232,.08);
+            color: #cdbce4;
+            padding: 8px 22px;
+            border-radius: 30px;
+            font-size: 13px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all .2s;
+        }
+        .btn-reload:hover { background: rgba(200,176,232,.2); color: #fff; }
+        .img-broken { opacity: .25; filter: grayscale(1); }
+
+        /* ==========================================================
+           详情查看器（图片大图 & 视频详情播放 通用）
+        ========================================================== */
+        .viewer {
             position: fixed;
             inset: 0;
             z-index: 9999;
-            background: rgba(8, 6, 14, 0.92);
-            backdrop-filter: blur(20px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: rgba(6,4,12,.94);
+            backdrop-filter: blur(18px);
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.35s ease, visibility 0.35s ease;
-            padding: 30px;
-            cursor: zoom-out;
+            transition: opacity .3s ease, visibility .3s ease;
         }
+        .viewer.active { opacity: 1; visibility: visible; }
 
-        .lightbox.active {
-            opacity: 1;
-            visibility: visible;
-        }
+        .viewer .v-backdrop { position: absolute; inset: 0; cursor: zoom-out; }
 
-        .lightbox img {
-            max-width: 95vw;
-            max-height: 92vh;
-            object-fit: contain;
-            border-radius: 12px;
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
-            transform: scale(0.95);
-            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-            cursor: zoom-out;
-            background: #0a0810;
-        }
-
-        .lightbox.active img {
-            transform: scale(1);
-        }
-
-        .lightbox .close-btn {
-            position: fixed;
-            top: 24px;
-            right: 28px;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
+        .viewer .v-stage {
+            position: absolute;
+            inset: 0 0 66px 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.2s;
-            backdrop-filter: blur(8px);
-            user-select: none;
-            color: #c0b0d8;
+            padding: 56px 20px 8px;
         }
-
-        .lightbox .close-btn:hover {
-            background: rgba(120, 80, 180, 0.3);
-            transform: scale(1.08);
-        }
-
-        .lightbox .close-btn svg {
-            width: 28px;
-            height: 28px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 2.5;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .lightbox .counter {
-            position: fixed;
-            bottom: 32px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #8a7a9e;
-            font-size: 14px;
-            letter-spacing: 2px;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 6px 20px;
-            border-radius: 30px;
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            font-weight: 300;
-        }
-
-        /* ===== 响应式 ===== */
-        @media (max-width: 640px) {
-            body {
-                padding: 16px 12px 40px;
-            }
-
-            .site-header h1 {
-                font-size: 28px;
-                letter-spacing: 8px;
-            }
-            .site-header h1::after {
-                font-size: 12px;
-                right: -64px;
-                bottom: 4px;
-            }
-
-            .grid {
-                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-                gap: 12px;
-            }
-
-            .media-card img,
-            .media-card video {
-                max-height: 340px;
-            }
-
-            .lightbox {
-                padding: 16px;
-            }
-            .lightbox .close-btn {
-                width: 40px;
-                height: 40px;
-                top: 16px;
-                right: 16px;
-            }
-            .lightbox .close-btn svg {
-                width: 22px;
-                height: 22px;
-            }
-            .lightbox .counter {
-                font-size: 12px;
-                padding: 4px 14px;
-                bottom: 20px;
-            }
-
-            .media-card .img-hint {
-                display: none;
-            }
-        }
-
-        @media (max-width: 400px) {
-            .grid {
-                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-                gap: 8px;
-            }
-            .media-card img,
-            .media-card video {
-                max-height: 240px;
-            }
-            .site-header h1 {
-                font-size: 22px;
-                letter-spacing: 6px;
-            }
-            .site-header h1::after {
-                display: none;
-            }
-            .site-header {
-                padding-bottom: 24px;
-            }
-        }
-
-        /* ===== 错误提示 ===== */
-        .error-msg {
-            text-align: center;
-            padding: 60px 20px;
-            color: #b080a0;
-        }
-
-        .error-msg .icon {
-            display: inline-block;
-            margin-bottom: 12px;
-            color: #b080a0;
-        }
-
-        .error-msg .icon svg {
-            width: 36px;
-            height: 36px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .error-msg .code {
-            font-size: 14px;
-            color: #6a4a6a;
-            margin-top: 8px;
-            word-break: break-all;
-        }
-
-        /* ===== 滚动条美化 ===== */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0d0b12;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #3a2a4e;
+        .viewer .v-stage img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
             border-radius: 10px;
+            box-shadow: 0 20px 70px rgba(0,0,0,.8);
+            background: #08060c;
+            animation: pop .35s cubic-bezier(.34,1.56,.64,1);
+            cursor: zoom-out;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #5a4a6e;
+        .viewer .v-stage video {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 20px 70px rgba(0,0,0,.85);
+            background: #05030a;
+            outline: none;
+        }
+        /* 竖屏手机/窄屏让视频占满宽度 */
+        @media (max-width: 720px) {
+            .viewer .v-stage video { width: 100%; }
+            .viewer .v-stage { padding: 50px 6px 6px; }
+        }
+        @keyframes pop { from { transform: scale(.94); opacity: .4; } to { transform: scale(1); opacity: 1; } }
+
+        .viewer .v-loading {
+            position: absolute;
+            display: flex; flex-direction: column; align-items: center; gap: 12px;
+            color: #7a6a8e; font-size: 12px; letter-spacing: 2px;
+        }
+        .viewer .v-msg {
+            max-width: 70%;
+            color: #9d8db4; font-size: 13px; letter-spacing: 1px; text-align: center;
+            line-height: 1.8; word-break: break-all;
+        }
+
+        /* 关闭 / 方向键 */
+        .v-btn {
+            position: absolute;
+            z-index: 3;
+            width: 46px; height: 46px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,.1);
+            background: rgba(15,10,26,.6);
+            color: #c0b0d8;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: background .2s, transform .2s, color .2s;
+            font-family: inherit;
+            line-height: 1;
+        }
+        .v-btn:hover { background: rgba(140,90,210,.35); color: #fff; transform: scale(1.08); }
+        .v-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; }
+        .v-close { top: 18px; right: 18px; }
+        .v-nav { top: 50%; transform: translateY(-50%); }
+        .v-nav:hover { transform: translateY(-50%) scale(1.1); }
+        .v-prev { left: 14px; }
+        .v-next { right: 14px; }
+        .v-nav svg { width: 22px; height: 22px; }
+        .v-nav svg path { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+
+        /* 底部信息栏 */
+        .v-bar {
+            position: absolute;
+            left: 50%; bottom: 0;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 980px;
+            height: 66px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 18px;
+            border-top: 1px solid rgba(255,255,255,.06);
+            background: rgba(10,7,18,.6);
+            backdrop-filter: blur(10px);
+        }
+        .v-title {
+            flex: 1 1 auto;
+            min-width: 0;
+            font-size: 14px;
+            color: #e2d8ee;
+            letter-spacing: .5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .v-type {
+            flex: 0 0 auto;
+            font-size: 11px;
+            letter-spacing: 2px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(200,176,232,.3);
+            color: #c8b0e8;
+        }
+        .v-counter { flex: 0 0 auto; font-size: 12px; color: #8a7a9e; letter-spacing: 1px; }
+        .v-actions { flex: 0 0 auto; display: flex; gap: 8px; }
+        .v-actions .v-act {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            letter-spacing: 1px;
+            color: #b5a4ce;
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            text-decoration: none;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all .2s;
+            white-space: nowrap;
+        }
+        .v-actions .v-act:hover { color: #fff; background: rgba(150,95,220,.3); border-color: rgba(200,176,232,.5); }
+        .v-actions .v-act svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .v-hint {
+            position: absolute;
+            left: 50%; bottom: 74px;
+            transform: translateX(-50%);
+            color: #574a6a;
+            font-size: 11px;
+            letter-spacing: 1px;
+            background: rgba(0,0,0,.25);
+            padding: 4px 14px;
+            border-radius: 20px;
+            pointer-events: none;
+            white-space: nowrap;
+            opacity: .85;
+        }
+
+        /* ===== 小屏适配 ===== */
+        @media (max-width: 640px) {
+            body { padding: 16px 10px 50px; }
+            .site-header h1 { font-size: 28px; letter-spacing: 9px; }
+            .site-header h1::after { right: -46px; bottom: 5px; font-size: 10px; letter-spacing: 2px; }
+            .site-count { margin-top: 8px; }
+            .grid { gap: 8px; }
+            .media-card { border-radius: 12px; }
+            .corner-hint { display: none; }
+            .v-close { top: 12px; right: 12px; width: 40px; height: 40px; }
+            .v-nav { width: 38px; height: 38px; }
+            .v-prev { left: 8px; }
+            .v-next { right: 8px; }
+            .v-hint { display: none; }
+            .v-bar { gap: 8px; padding: 0 12px; }
+            .v-title { font-size: 12px; }
+            .v-actions .v-act { padding: 5px 9px; font-size: 11px; }
+            .viewer .v-stage { padding-bottom: 2px; }
+        }
+        @media (max-width: 400px) {
+            .site-header h1::after { display: none; }
+            .v-counter { display: none; }
+            .v-type { display: none; }
+        }
+        /* 横屏且较矮的设备（手机横过来 / 平板横屏） */
+        @media (orientation: landscape) and (max-height: 560px) {
+            body { padding-top: 10px; }
+            .viewer .v-stage { inset: 0 0 52px 0; padding: 40px 6px 4px; }
+            .v-hint { bottom: 58px; }
+            .v-bar { height: 52px; }
+            .site-count { display: none; }
         }
     </style>
 </head>
@@ -405,296 +515,600 @@
     <!-- ===== 顶部 ===== -->
     <header class="site-header">
         <h1>昔涟</h1>
+        <p class="site-sub">图 片 · 视 频 二 创 集</p>
+        <div class="site-count" id="siteCount"></div>
     </header>
 
-    <!-- ===== 内容容器 ===== -->
-    <div id="app">
-        <!-- 由 JS 动态渲染 -->
-        <div class="loading" id="loadingState">
-            <div class="spinner"></div>
-            <div>加载中 · 请稍候</div>
-            <div class="hint">读取 er.json</div>
-        </div>
+    <!-- ===== 分类工具条 ===== -->
+    <div class="toolbar" id="toolbar" hidden>
+        <button class="chip on" data-filter="all">全部 <i id="cAll"></i></button>
+        <button class="chip" data-filter="image">🖼 图片 <i id="cImg"></i></button>
+        <button class="chip" data-filter="video">🎬 视频 <i id="cVid"></i></button>
     </div>
 
-    <!-- ===== 灯箱 ===== -->
-    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
-        <div class="close-btn" onclick="closeLightbox()">
-            <svg viewBox="0 0 24 24">
-                <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+    <!-- ===== 内容 ===== -->
+    <main id="app">
+        <div class="loading" id="loadingState">
+            <div class="spinner" style="margin:0 auto 16px;"></div>
+            <div>加载中 · 请稍候</div>
+            <div class="hint">正在读取 er.json</div>
         </div>
-        <img id="lightboxImg" src="" alt="放大预览" />
-        <div class="counter" id="lightboxCounter"></div>
+    </main>
+
+    <!-- ===== 详情查看器 ===== -->
+    <div class="viewer" id="viewer" role="dialog" aria-modal="true">
+        <div class="v-backdrop"></div>
+
+        <button class="v-btn v-close" id="vClose" aria-label="关闭">
+            <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+        <button class="v-btn v-nav v-prev" id="vPrev" aria-label="上一个">
+            <svg viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></svg>
+        </button>
+        <button class="v-btn v-nav v-next" id="vNext" aria-label="下一个">
+            <svg viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></svg>
+        </button>
+
+        <div class="v-stage" id="vStage"></div>
+
+        <div class="v-hint">← → 切换 · Esc 关闭 · 看视频点右下角“全屏”可横屏放大</div>
+
+        <div class="v-bar">
+            <div class="v-type" id="vType">视频</div>
+            <div class="v-title" id="vTitle"></div>
+            <div class="v-counter" id="vCounter"></div>
+            <div class="v-actions">
+                <button class="v-act" id="vFs" hidden>
+                    <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+                    <span>全屏</span>
+                </button>
+                <a class="v-act" id="vLink" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+                    源文件
+                </a>
+            </div>
+        </div>
     </div>
 
     <script>
-        // ============================================================
-        //  核心逻辑
-        // ============================================================
+    (function () {
+        'use strict';
 
-        (function() {
-            'use strict';
+        // ---------- DOM ----------
+        var APP = document.getElementById('app');
+        var toolbar = document.getElementById('toolbar');
+        var viewer = document.getElementById('viewer');
+        var vStage = document.getElementById('vStage');
+        var vType = document.getElementById('vType');
+        var vTitle = document.getElementById('vTitle');
+        var vCounter = document.getElementById('vCounter');
+        var vFs = document.getElementById('vFs');
+        var vLink = document.getElementById('vLink');
 
-            const APP = document.getElementById('app');
-            const LOADING = document.getElementById('loadingState');
-            const LIGHTBOX = document.getElementById('lightbox');
-            const LIGHTBOX_IMG = document.getElementById('lightboxImg');
-            const LIGHTBOX_COUNTER = document.getElementById('lightboxCounter');
+        var state = {
+            all: [],        // 全部原始条目
+            view: [],       // 当前筛选后展示的条目
+            filter: 'all',
+            cur: -1,
+            open: false
+        };
 
-            // ---------- 工具 ----------
-            function isImage(url) {
-                const ext = url.split('?')[0].split('#')[0].split('.').pop()?.toLowerCase() || '';
-                return ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg', 'avif', 'tiff', 'tif'].includes(ext);
+        var IMAGE_EXT = ['png','jpg','jpeg','webp','gif','bmp','svg','avif','tiff','tif','heic','heif'];
+        var VIDEO_EXT = ['mp4','webm','mov','m4v','mkv','avi','flv','wmv','mpg','mpeg','3gp','ogv','ts'];
+
+        // ---------- 工具 ----------
+        function extOf(url) {
+            return (url.split('?')[0].split('#')[0].match(/\.([a-z0-9]+)$/i) || [])[1] ?
+                (url.split('?')[0].split('#')[0].match(/\.([a-z0-9]+)$/i) || [])[1].toLowerCase() : '';
+        }
+        function typeOf(url) {
+            var e = extOf(url);
+            if (VIDEO_EXT.indexOf(e) !== -1) return 'video';
+            if (IMAGE_EXT.indexOf(e) !== -1) return 'image';
+            return 'image'; // 未知后缀默认当图片
+        }
+        function escapeHtml(s) {
+            if (s === undefined || s === null) return '';
+            return String(s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        }
+        function urlName(u) {
+            try {
+                var s = u.split(/[?#]/)[0];
+                var n = decodeURIComponent(s.split('/').pop() || '');
+                return n || '';
+            } catch (e) { return ''; }
+        }
+
+        // ---------- 数据解析（兼容多种 er.json 写法） ----------
+        function normalizeItem(it) {
+            if (typeof it === 'string') {
+                return { url: it, type: typeOf(it), title: '', poster: '' };
             }
-
-            function isVideo(url) {
-                const ext = url.split('?')[0].split('#')[0].split('.').pop()?.toLowerCase() || '';
-                return ['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', 'wmv', 'm4v', 'mpg', 'mpeg', '3gp'].includes(ext);
-            }
-
-            function getType(url) {
-                if (isVideo(url)) return 'video';
-                if (isImage(url)) return 'image';
-                return 'image'; // 默认当作图片
-            }
-
-            // ---------- 渲染 ----------
-            function renderItems(items) {
-                LOADING.style.display = 'none';
-
-                if (!items || items.length === 0) {
-                    APP.innerHTML = `
-                        <div class="empty-state">
-                            <div class="icon">
-                                <svg viewBox="0 0 24 24" width="56" height="56">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
-                                    <circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
-                                    <path d="M21 15l-5-5-5 5-5-5-3 3" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
-                                </svg>
-                            </div>
-                            <p>还没有内容 · 去 er.json 添加链接吧</p>
-                        </div>
-                    `;
-                    return;
+            if (it && typeof it === 'object') {
+                var url = it.url || it.src || it.file || '';
+                if (!/^https?:|^blob:|^\//.test(url) && !/^\.\.?\//.test(url)) {
+                    // 保留相对路径判断：允许相对路径
+                    if (!/\./.test(url.split('/').pop() || '')) return null;
                 }
+                if (!url) return null;
+                return {
+                    url: url,
+                    type: (it.type === 'video' || it.type === 'image') ? it.type : typeOf(url),
+                    title: it.title || '',
+                    poster: it.poster || '',
+                    w: it.w || 0,
+                    h: it.h || 0
+                };
+            }
+            return null;
+        }
 
-                const imageItems = [];
-                items.forEach((item, idx) => {
-                    if (item.type === 'image') {
-                        imageItems.push({ url: item.url, index: idx });
-                    }
+        function parseData(data) {
+            var list = [];
+            var pushArr = function (arr) {
+                (arr || []).forEach(function (it) {
+                    var item = normalizeItem(it);
+                    if (item) list.push(item);
                 });
-
-                let html = '<div class="grid">';
-
-                items.forEach((item, idx) => {
-                    const url = item.url;
-                    const type = item.type || getType(url);
-                    const isImg = type === 'image';
-                    const isVid = type === 'video';
-                    const safeUrl = url.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-
-                    if (isImg) {
-                        html += `
-                            <div class="media-card" data-index="${idx}" data-url="${safeUrl}">
-                                <img src="${safeUrl}" alt="昔涟 · 二创" loading="lazy" onerror="this.style.opacity='0.3'" />
-                                <span class="img-hint">
-                                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
-                                    点击放大
-                                </span>
-                            </div>
-                        `;
-                    } else if (isVid) {
-                        html += `
-                            <div class="media-card" data-index="${idx}">
-                                <video src="${safeUrl}" controls preload="metadata" playsinline
-                                       onerror="this.style.opacity='0.3'">
-                                    您的浏览器不支持视频播放
-                                </video>
-                            </div>
-                        `;
-                    } else {
-                        // 未知类型 —— 尝试当作图片
-                        html += `
-                            <div class="media-card" data-index="${idx}" data-url="${safeUrl}">
-                                <img src="${safeUrl}" alt="昔涟 · 二创" loading="lazy" onerror="this.style.opacity='0.3'" />
-                                <span class="img-hint">
-                                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
-                                    点击放大
-                                </span>
-                            </div>
-                        `;
-                    }
-                });
-
-                html += '</div>';
-                APP.innerHTML = html;
-
-                // ---------- 绑定图片点击事件（灯箱） ----------
-                const cards = APP.querySelectorAll('.media-card');
-                cards.forEach((card) => {
-                    const img = card.querySelector('img');
-                    if (img) {
-                        card.style.cursor = 'pointer';
-                        card.addEventListener('click', function(e) {
-                            if (e.target.tagName === 'VIDEO') return;
-                            const url = this.dataset.url || img.src;
-                            if (url) {
-                                openLightbox(url, imageItems);
-                            }
-                        });
-                    }
-                });
-            }
-
-            // ---------- 灯箱 ----------
-            let lightboxItems = [];
-            let currentLightboxIndex = 0;
-
-            function openLightbox(url, items) {
-                lightboxItems = items || [];
-                let foundIndex = -1;
-                lightboxItems.forEach((item, i) => {
-                    if (item.url === url) foundIndex = i;
-                });
-                if (foundIndex === -1 && lightboxItems.length > 0) {
-                    foundIndex = 0;
-                }
-                currentLightboxIndex = foundIndex >= 0 ? foundIndex : 0;
-
-                showLightboxImage(currentLightboxIndex);
-                LIGHTBOX.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-
-            function showLightboxImage(index) {
-                if (!lightboxItems.length) return;
-                const item = lightboxItems[index];
-                if (!item) return;
-                LIGHTBOX_IMG.src = item.url;
-                LIGHTBOX_COUNTER.textContent = `${index + 1} / ${lightboxItems.length}`;
-                document.removeEventListener('keydown', lightboxKeyHandler);
-                document.addEventListener('keydown', lightboxKeyHandler);
-            }
-
-            function lightboxKeyHandler(e) {
-                if (e.key === 'Escape') {
-                    closeLightbox();
-                } else if (e.key === 'ArrowLeft') {
-                    navigateLightbox(-1);
-                } else if (e.key === 'ArrowRight') {
-                    navigateLightbox(1);
-                }
-            }
-
-            function navigateLightbox(delta) {
-                if (!lightboxItems.length) return;
-                let newIndex = currentLightboxIndex + delta;
-                if (newIndex < 0) newIndex = lightboxItems.length - 1;
-                if (newIndex >= lightboxItems.length) newIndex = 0;
-                currentLightboxIndex = newIndex;
-                showLightboxImage(currentLightboxIndex);
-            }
-
-            window.closeLightbox = function() {
-                LIGHTBOX.classList.remove('active');
-                document.body.style.overflow = '';
-                document.removeEventListener('keydown', lightboxKeyHandler);
             };
+            if (Array.isArray(data)) {
+                pushArr(data);
+            } else if (data && typeof data === 'object') {
+                if (Array.isArray(data.items)) pushArr(data.items);
+                else if (Array.isArray(data.list)) pushArr(data.list);
+                else if (Array.isArray(data.data)) pushArr(data.data);
+                else {
+                    // { key: url } 形式
+                    Object.keys(data).forEach(function (k) {
+                        var it = normalizeItem(data[k]);
+                        if (it) { if (!it.title) it.title = k; list.push(it); }
+                    });
+                }
+            }
+            return list;
+        }
 
-            LIGHTBOX_IMG.addEventListener('click', function(e) {
-                e.stopPropagation();
+        // ============================================================
+        //  视频封面：截取第一帧（可看帧）生成缩略图
+        // ============================================================
+        var posterCache = {};   // url -> dataURL / null（本次会话内复用）
+        var captureQueue = [];
+        var activeCaptures = 0;
+        var MAX_CONCURRENT = 2;
+
+        function capturePoster(url, timeout) {
+            timeout = timeout || 9000;
+            return new Promise(function (resolve) {
+                if (Object.prototype.hasOwnProperty.call(posterCache, url)) {
+                    resolve(posterCache[url]); return;
+                }
+                var v = document.createElement('video');
+                v.muted = true;
+                v.playsInline = true;
+                v.preload = 'metadata';
+                if (/^https?:/i.test(url)) { try { v.crossOrigin = 'anonymous'; } catch (e) {} }
+
+                var settled = false;
+                var grabbed = false;
+                var timer = null;
+                var fallbackTimer = null;
+
+                function finish(val) {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(timer);
+                    clearTimeout(fallbackTimer);
+                    try { v.removeAttribute('src'); v.load(); } catch (e) {}
+                    posterCache[url] = val;
+                    resolve(val);
+                }
+                function ok()   { finish(dataURL()); }
+                function fail() { finish(null); }
+
+                function dataURL() {
+                    try {
+                        var vw = v.videoWidth, vh = v.videoHeight;
+                        if (!vw || !vh) return null;
+                        var MAXW = 1280;
+                        var scale = Math.min(1, MAXW / vw);
+                        var w = Math.max(2, Math.round(vw * scale));
+                        var h = Math.max(2, Math.round(vh * scale));
+                        var c = document.createElement('canvas');
+                        c.width = w; c.height = h;
+                        var ctx = c.getContext('2d');
+                        ctx.drawImage(v, 0, 0, w, h);
+                        return c.toDataURL('image/jpeg', 0.85);
+                    } catch (e) {
+                        return null; // 跨域限制 / 无法读取帧
+                    }
+                }
+
+                function grabNow() {
+                    if (grabbed || settled) return;
+                    var d = dataURL();
+                    if (d) { grabbed = true; finish(d); }
+                }
+
+                v.onerror = function () { fail(); };
+                v.onloadedmetadata = function () {
+                    try {
+                        var dur = v.duration;
+                        var t = 0.05;
+                        if (Number.isFinite(dur) && dur > 1) t = Math.min(1, dur * 0.12);
+                        if (t >= dur) t = Math.max(0, dur - 0.05);
+                        v.currentTime = t;
+                    } catch (e) { fail(); }
+                    // 若服务器不支持 seek，2 秒后尝试取当前已解码帧兜底
+                    fallbackTimer = setTimeout(grabNow, 2200);
+                };
+                v.onseeked = function () { grabNow(); };
+                v.onloadeddata = function () {
+                    // seek 未成功时，帧可能已可解码，先不立刻取（避免黑帧），
+                    // 交给 fallbackTimer 或 seeked。此处仅当 currentTime>0 才取。
+                    if (v.currentTime > 0) grabNow();
+                };
+
+                timer = setTimeout(fail, timeout);
+                v.src = url;
+            });
+        }
+
+        function pumpCaptures() {
+            while (activeCaptures < MAX_CONCURRENT && captureQueue.length) {
+                var job = captureQueue.shift();
+                activeCaptures++;
+                capturePoster(job.url).then(function (data) {
+                    job.slot && applyPoster(job.slot, data);
+                }).catch(function () {
+                    job.slot && applyPoster(job.slot, null);
+                }).then(function () {
+                    activeCaptures--;
+                    pumpCaptures();
+                });
+            }
+        }
+        function enqueueCapture(slot) {
+            captureQueue.push({ slot: slot, url: slot.getAttribute('data-url') });
+            pumpCaptures();
+        }
+
+        // ============================================================
+        //  渲染
+        // ============================================================
+        var io = null;
+        if ('IntersectionObserver' in window) {
+            io = new IntersectionObserver(function (entries) {
+                entries.forEach(function (en) {
+                    if (!en.isIntersecting) return;
+                    var slot = en.target;
+                    io.unobserve(slot);
+                    var url = slot.getAttribute('data-url');
+                    if (Object.prototype.hasOwnProperty.call(posterCache, url)) {
+                        applyPoster(slot, posterCache[url]);
+                    } else {
+                        enqueueCapture(slot);
+                    }
+                });
+            }, { rootMargin: '600px 0px' });
+        }
+
+        function applyPoster(slot, data) {
+            if (!slot) return;
+            var img = slot.querySelector('.poster-img');
+            var load = slot.querySelector('.poster-loading');
+            var fb = slot.querySelector('.poster-fallback');
+            if (load) load.style.display = 'none';
+            slot.classList.remove('pending');
+            if (data) {
+                img.src = data;
+                slot.classList.add('posted');
+                img.addEventListener('load', function () { applyNatural(img, slot); });
+                if (img.complete && img.naturalWidth) applyNatural(img, slot);
+            } else {
+                if (fb) fb.hidden = false;
+            }
+        }
+
+        // 依据媒体真实比例决定是否整行放大展示（横屏内容）
+        function applyNatural(el, slot) {
+            var w = el.naturalWidth, h = el.naturalHeight;
+            if (!w || !h) return;
+            var card = slot ? slot.closest('.media-card') : el.closest('.media-card');
+            if (!card) return;
+            var ratio = w / h;
+            card.setAttribute('data-ratio', ratio.toFixed(3));
+            var isVideo = card.classList.contains('video-card');
+            var span = ratio >= 1.55 && (isVideo || w >= 1000);
+            card.classList.toggle('span-row', span);
+        }
+
+        function render() {
+            var list = state.all.filter(function (it) {
+                if (state.filter === 'all') return true;
+                return it.type === state.filter;
+            });
+            state.view = list;
+
+            var html = '<div class="grid">';
+
+            list.forEach(function (it, idx) {
+                var safeUrl = escapeHtml(it.url);
+                var title = it.title ? '<div class="card-caption">' + escapeHtml(it.title) + '</div>' : '';
+
+                if (it.type === 'video') {
+                    html +=
+                        '<div class="media-card video-card" data-index="' + idx + '" role="button" tabindex="0" aria-label="播放视频">' +
+                            '<div class="poster-slot pending" data-url="' + safeUrl + '">' +
+                                '<div class="poster-loading"><div class="spinner"></div><span>提取首帧…</span></div>' +
+                                '<img class="poster-img" alt="" draggable="false" />' +
+                                '<div class="poster-fallback" hidden>' +
+                                    '<svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="15" rx="3"/><path d="M10 9l5 3-5 3z" fill="currentColor" stroke="none"/></svg>' +
+                                    '<span>点击播放视频</span>' +
+                                '</div>' +
+                                '<span class="play-badge"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span>' +
+                                '<span class="corner-hint">▶ 点击全屏播放</span>' +
+                            '</div>' + title +
+                        '</div>';
+                } else {
+                    html +=
+                        '<div class="media-card image-card" data-index="' + idx + '" role="button" tabindex="0" aria-label="查看大图">' +
+                            '<img class="photo" src="' + safeUrl + '" alt="昔涟 · 二创" loading="lazy" draggable="false" ' +
+                                'onerror="this.classList.add(\'img-broken\')" />' +
+                            '<span class="corner-hint">🔍 查看大图</span>' + title +
+                        '</div>';
+                }
             });
 
-            let touchStartY = 0;
-            LIGHTBOX.addEventListener('touchstart', function(e) {
-                touchStartY = e.touches[0].clientY;
-            }, { passive: true });
-            LIGHTBOX.addEventListener('touchend', function(e) {
-                const endY = e.changedTouches[0].clientY;
-                if (endY - touchStartY > 60) {
-                    closeLightbox();
+            html += '</div>';
+            APP.innerHTML = html;
+
+            // 已入视口才去截取封面，节省流量
+            var pending = APP.querySelectorAll('.poster-slot.pending');
+            if (pending.length) {
+                if (io) {
+                    io.disconnect(); // 清掉旧页面残留的观察
+                    pending.forEach(function (slot) { io.observe(slot); });
+                } else {
+                    pending.forEach(function (slot) { enqueueCapture(slot); });
                 }
-            }, { passive: true });
-
-            // ---------- 加载数据 ----------
-            function loadData() {
-                const url = 'er.json';
-                fetch(url, {
-                        cache: 'no-cache',
-                        headers: { 'Accept': 'application/json' }
-                    })
-                    .then(res => {
-                        if (!res.ok) {
-                            throw new Error(`HTTP ${res.status} · ${res.statusText}`);
-                        }
-                        return res.json();
-                    })
-                    .then(data => {
-                        let items = [];
-                        if (Array.isArray(data)) {
-                            items = data.map(item => {
-                                if (typeof item === 'string') {
-                                    return { url: item, type: getType(item) };
-                                }
-                                if (typeof item === 'object' && item.url) {
-                                    return {
-                                        url: item.url,
-                                        type: item.type || getType(item.url)
-                                    };
-                                }
-                                return null;
-                            }).filter(Boolean);
-                        } else if (typeof data === 'object' && data !== null) {
-                            const raw = data.items || data.list || data.data || data;
-                            if (Array.isArray(raw)) {
-                                items = raw.map(item => {
-                                    if (typeof item === 'string') {
-                                        return { url: item, type: getType(item) };
-                                    }
-                                    if (typeof item === 'object' && item.url) {
-                                        return {
-                                            url: item.url,
-                                            type: item.type || getType(item.url)
-                                        };
-                                    }
-                                    return null;
-                                }).filter(Boolean);
-                            } else {
-                                const vals = Object.values(raw).filter(v => typeof v === 'string' && v.startsWith('http'));
-                                items = vals.map(url => ({ url, type: getType(url) }));
-                            }
-                        }
-
-                        renderItems(items);
-                    })
-                    .catch(err => {
-                        LOADING.style.display = 'none';
-                        APP.innerHTML = `
-                            <div class="error-msg">
-                                <div class="icon">
-                                    <svg viewBox="0 0 24 24">
-                                        <circle cx="12" cy="12" r="10"/>
-                                        <path d="M12 8v4M12 16h.01"/>
-                                    </svg>
-                                </div>
-                                <div>加载 er.json 失败</div>
-                                <div class="code">${err.message || '请检查文件是否存在或网络连接'}</div>
-                                <div style="margin-top:16px; font-size:13px; color:#4a3a5a;">
-                                    确保 er.json 与 index.html 在同一目录下
-                                </div>
-                            </div>
-                        `;
-                        console.error('[昔涟] 加载失败:', err);
-                    });
             }
 
-            // ---------- 启动 ----------
-            loadData();
+            // 图片：等加载完拿到真实比例，决定横屏内容是否整行放大
+            APP.querySelectorAll('img.photo').forEach(function (img) {
+                if (img.complete && img.naturalWidth) applyNatural(img, null);
+                else img.addEventListener('load', function () { applyNatural(img, null); });
+            });
 
-        })();
+            // 进度类动画延迟
+            APP.querySelectorAll('.media-card').forEach(function (card, i) {
+                card.style.animationDelay = Math.min(i * 0.02, 0.5) + 's';
+            });
+        }
+
+        // ============================================================
+        //  详情查看器（图片大图 / 视频播放，混合浏览）
+        // ============================================================
+        function hideLoading() {
+            var ld = vStage.querySelector('.v-loading');
+            if (ld) ld.remove();
+        }
+
+        function stageMessage(msg) {
+            var old = vStage.querySelector('.v-msg');
+            if (old) old.remove();
+            var div = document.createElement('div');
+            div.className = 'v-msg';
+            div.textContent = msg;
+            vStage.appendChild(div);
+        }
+
+        function buildStage() {
+            vStage.innerHTML = '';
+            var item = state.view[state.cur];
+            if (!item) return;
+
+            // 加载指示
+            var ld = document.createElement('div');
+            ld.className = 'v-loading';
+            ld.innerHTML = '<div class="spinner"></div><span>加载中…</span>';
+            vStage.appendChild(ld);
+
+            var isVid = item.type === 'video';
+
+            if (isVid) {
+                var video = document.createElement('video');
+                video.src = item.url;
+                video.controls = true;
+                video.playsInline = true;
+                video.preload = 'auto';
+                video.setAttribute('playsinline', '');
+                video.addEventListener('loadedmetadata', function () { hideLoading(); });
+                video.addEventListener('error', function () { hideLoading(); stageMessage('视频无法播放：可能已失效、格式不支持或网络错误'); });
+                video.play().catch(function () { /* 无用户手势时交给用户点播放 */ });
+                vStage.appendChild(video);
+                vFs.hidden = false;
+            } else {
+                var img = document.createElement('img');
+                img.src = item.url;
+                img.alt = item.title || '昔涟 · 二创';
+                img.draggable = false;
+                img.addEventListener('load', function () { hideLoading(); });
+                img.addEventListener('error', function () { hideLoading(); stageMessage('图片加载失败：可能已失效或网络错误'); });
+                vStage.appendChild(img);
+                vFs.hidden = true;
+            }
+
+            // 信息栏
+            var name = item.title || urlName(item.url) || item.url;
+            vTitle.textContent = name;
+            vType.textContent = isVid ? '视频' : '图片';
+            vCounter.textContent = (state.cur + 1) + ' / ' + state.view.length;
+            vLink.href = item.url;
+            vFs.hidden = !isVid;
+
+            // 单条时不显示切换按钮
+            document.getElementById('vPrev').style.visibility = state.view.length > 1 ? 'visible' : 'hidden';
+            document.getElementById('vNext').style.visibility = state.view.length > 1 ? 'visible' : 'hidden';
+        }
+
+        function openViewer(idx) {
+            if (!state.view.length) return;
+            var n = state.view.length;
+            idx = ((idx % n) + n) % n;
+            state.cur = idx;
+            state.open = true;
+            buildStage();
+            viewer.classList.add('active');
+            document.body.classList.add('no-scroll');
+        }
+
+        function closeViewer() {
+            if (!state.open) return;
+            state.open = false;
+            vStage.innerHTML = '';      // 同时停掉视频
+            viewer.classList.remove('active');
+            document.body.classList.remove('no-scroll');
+        }
+
+        function navViewer(delta) {
+            if (!state.open || state.view.length < 2) return;
+            openViewer(state.cur + delta);
+        }
+
+        function fullscreenCurrent() {
+            var video = vStage.querySelector('video');
+            var doc = document;
+            var fsEl = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement;
+            if (fsEl) {
+                var exit = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen;
+                if (exit) exit.call(doc);
+                return;
+            }
+            if (video) {
+                if (video.webkitEnterFullscreen) { try { video.webkitEnterFullscreen(); return; } catch (e) {} }
+                var vf = video.requestFullscreen || video.webkitRequestFullscreen;
+                if (vf) { try { var p = vf.call(video); if (p && p.catch) p.catch(function(){}); } catch (e) {} return; }
+            }
+            var df = doc.documentElement.requestFullscreen || doc.documentElement.webkitRequestFullscreen;
+            if (df) { try { df.call(doc.documentElement); } catch (e) {} }
+        }
+
+        // ---------- 事件绑定 ----------
+        document.getElementById('vClose').addEventListener('click', closeViewer);
+        document.getElementById('vPrev').addEventListener('click', function (e) { e.stopPropagation(); navViewer(-1); });
+        document.getElementById('vNext').addEventListener('click', function (e) { e.stopPropagation(); navViewer(1); });
+        vFs.addEventListener('click', function (e) { e.stopPropagation(); fullscreenCurrent(); });
+
+        // 点空白区域关闭
+        viewer.addEventListener('click', function (e) {
+            if (e.target.closest('img, video, .v-bar, .v-btn, a, button')) return;
+            closeViewer();
+        });
+
+        // 键盘：卡片回车/空格打开 + 查看器内 ← → Esc / F
+        document.addEventListener('keydown', function (e) {
+            var card = e.target && e.target.closest ? e.target.closest('.media-card') : null;
+            if (card && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                openViewer(Number(card.getAttribute('data-index')));
+                return;
+            }
+            if (!state.open) return;
+            if (e.key === 'Escape') { closeViewer(); return; }
+            if (e.key === 'ArrowLeft') { navViewer(-1); return; }
+            if (e.key === 'ArrowRight') { navViewer(1); return; }
+            if (e.key === 'f' || e.key === 'F') { fullscreenCurrent(); return; }
+        });
+
+        // 触屏滑动：横滑切图，下滑关闭（在视频上不做，避免干扰进度条）
+        var tsX = 0, tsY = 0;
+        viewer.addEventListener('touchstart', function (e) {
+            tsX = e.touches[0].clientX;
+            tsY = e.touches[0].clientY;
+        }, { passive: true });
+        viewer.addEventListener('touchend', function (e) {
+            if (!state.open) return;
+            var dx = e.changedTouches[0].clientX - tsX;
+            var dy = e.changedTouches[0].clientY - tsY;
+            if (Math.abs(dx) < 40 && Math.abs(dy) < 40) return;
+            if (e.target.closest && e.target.closest('video')) return; // 避开视频控制
+            if (Math.abs(dy) > Math.abs(dx) && dy > 70) { closeViewer(); return; }
+            if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
+                navViewer(dx < 0 ? 1 : -1);
+            }
+        }, { passive: true });
+
+        // 点卡片 → 打开详情
+        APP.addEventListener('click', function (e) {
+            var card = e.target.closest ? e.target.closest('.media-card') : null;
+            if (!card) return;
+            openViewer(Number(card.getAttribute('data-index')));
+        });
+
+        // 分类筛选
+        toolbar.addEventListener('click', function (e) {
+            var chip = e.target.closest ? e.target.closest('.chip') : null;
+            if (!chip) return;
+            state.filter = chip.getAttribute('data-filter');
+            toolbar.querySelectorAll('.chip').forEach(function (c) { c.classList.toggle('on', c === chip); });
+            render();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // ============================================================
+        //  加载 er.json
+        // ============================================================
+        function loadData() {
+            fetch('er.json', { cache: 'no-cache', headers: { 'Accept': 'application/json' } })
+                .then(function (res) {
+                    if (!res.ok) throw new Error('HTTP ' + res.status + (res.statusText ? ' · ' + res.statusText : ''));
+                    return res.json();
+                })
+                .then(function (data) {
+                    var list = parseData(data);
+                    if (!list.length) {
+                        document.getElementById('loadingState') && (document.getElementById('loadingState').style.display = 'none');
+                        toolbar.hidden = true;
+                        APP.innerHTML =
+                            '<div class="empty-state">' +
+                                '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5-5 5-5-5-3 3"/></svg>' +
+                                '<p>还没有内容 · 去 er.json 添加链接吧</p>' +
+                            '</div>';
+                        return;
+                    }
+                    state.all = list;
+
+                    // 顶部统计
+                    var imgN = list.filter(function (i) { return i.type === 'image'; }).length;
+                    var vidN = list.filter(function (i) { return i.type === 'video'; }).length;
+                    document.getElementById('siteCount').innerHTML =
+                        '共 <b>' + list.length + '</b> 个作品 · 图片 <b>' + imgN + '</b> · 视频 <b>' + vidN + '</b>';
+                    document.getElementById('cAll').textContent = list.length;
+                    document.getElementById('cImg').textContent = imgN;
+                    document.getElementById('cVid').textContent = vidN;
+                    toolbar.hidden = false;
+
+                    render();
+                })
+                .catch(function (err) {
+                    toolbar.hidden = true;
+                    APP.innerHTML =
+                        '<div class="error-msg">' +
+                            '<p style="font-size:15px;letter-spacing:2px;">加载 er.json 失败</p>' +
+                            '<div class="code">' + escapeHtml(err && err.message ? err.message : '请检查文件是否存在或网络连接') + '</div>' +
+                            '<button class="btn-reload" id="btnReload">重新加载</button>' +
+                            '<div style="margin-top:14px;font-size:12px;color:#4a3a5a;">确保 er.json 与 index.html 在同一目录，并通过 http/https 访问</div>' +
+                        '</div>';
+                    console.error('[昔涟] 加载失败:', err);
+                    var btn = document.getElementById('btnReload');
+                    if (btn) btn.addEventListener('click', loadData);
+                });
+        }
+
+        loadData();
+    })();
     </script>
-
 </body>
 </html>
