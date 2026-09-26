@@ -38,6 +38,38 @@
             --ease: cubic-bezier(.4, 0, .2, 1);
         }
 
+        /* 跟随系统自动切换 Material 深色 */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --blue: #8ab4f8;
+                --blue-dark: #aecbfa;
+                --blue-tint: rgba(138, 180, 248, .16);
+                --bg: #202124;
+                --surface: #292a2d;
+                --surface-2: #303134;
+                --text: #e8eaed;
+                --text-2: #9aa0a6;
+                --text-3: #80868b;
+                --divider: #3c4043;
+                --divider-2: #3c4043;
+                --hover: rgba(232, 234, 237, .08);
+                --shadow-1: 0 1px 2px rgba(0, 0, 0, .3), 0 1px 3px 1px rgba(0, 0, 0, .15);
+                --shadow-2: 0 1px 3px rgba(0, 0, 0, .3), 0 4px 8px 3px rgba(0, 0, 0, .15);
+            }
+            /* 深色下 Google 四色改用浅色版，保证对比度 */
+            .site-header h1 span:nth-child(1) { color: #8ab4f8; }
+            .site-header h1 span:nth-child(2) { color: #f28b82; }
+            .site-header h1::after {
+                background: linear-gradient(90deg, #8ab4f8, #f28b82 34%, #fdd663 67%, #81c995);
+                -webkit-background-clip: text;
+                background-clip: text;
+            }
+            .gdots i:nth-child(1) { background: #8ab4f8; }
+            .gdots i:nth-child(2) { background: #f28b82; }
+            .gdots i:nth-child(3) { background: #fdd663; }
+            .gdots i:nth-child(4) { background: #81c995; }
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         [hidden] { display: none !important; }
         html { -webkit-text-size-adjust: 100%; }
@@ -735,17 +767,13 @@
 
         <div class="v-stage" id="vStage"></div>
 
-        <div class="v-hint">方向键 切换 · Esc 关闭 · 看视频点右下角“全屏”可横屏放大</div>
+        <div class="v-hint">方向键 切换 · 空格 播放/暂停 · Esc 关闭 · 双击视频可全屏</div>
 
         <div class="v-bar">
             <div class="v-type" id="vType">视频</div>
             <div class="v-title" id="vTitle"></div>
             <div class="v-counter" id="vCounter"></div>
             <div class="v-actions">
-                <button class="v-act" id="vFs" hidden>
-                    <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
-                    <span>全屏</span>
-                </button>
                 <a class="v-act" id="vLink" target="_blank" rel="noopener">
                     <svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
                     源文件
@@ -766,7 +794,6 @@
         var vType = document.getElementById('vType');
         var vTitle = document.getElementById('vTitle');
         var vCounter = document.getElementById('vCounter');
-        var vFs = document.getElementById('vFs');
         var vLink = document.getElementById('vLink');
 
         var state = {
@@ -1110,7 +1137,6 @@
 
             if (isVid) {
                 buildVideoPlayer(item);      // ★ 自建播放器，不再用浏览器原生控件
-                vFs.hidden = false;
             } else {
                 var img = document.createElement('img');
                 img.src = item.url;
@@ -1119,7 +1145,6 @@
                 img.addEventListener('load', function () { hideLoading(); });
                 img.addEventListener('error', function () { hideLoading(); stageMessage('图片加载失败：可能已失效或网络错误'); });
                 vStage.appendChild(img);
-                vFs.hidden = true;
             }
 
             // 信息栏
@@ -1128,7 +1153,6 @@
             vType.textContent = isVid ? '视频' : '图片';
             vCounter.textContent = (state.cur + 1) + ' / ' + state.view.length;
             vLink.href = item.url;
-            vFs.hidden = !isVid;
 
             // 单条时不显示切换按钮
             document.getElementById('vPrev').style.visibility = state.view.length > 1 ? 'visible' : 'hidden';
@@ -1427,7 +1451,6 @@
         document.getElementById('vClose').addEventListener('click', closeViewer);
         document.getElementById('vPrev').addEventListener('click', function (e) { e.stopPropagation(); navViewer(-1); });
         document.getElementById('vNext').addEventListener('click', function (e) { e.stopPropagation(); navViewer(1); });
-        vFs.addEventListener('click', function (e) { e.stopPropagation(); fullscreenCurrent(); });
 
         // 点空白区域关闭
         viewer.addEventListener('click', function (e) {
